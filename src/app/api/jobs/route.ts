@@ -15,6 +15,9 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 }
 
 export async function GET(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ success: true, jobs: [] });
+  }
   try {
     const { searchParams } = new URL(req.url);
     const userLat = parseFloat(searchParams.get('lat') || '12.9716'); // Default to Bengaluru
