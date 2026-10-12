@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  phone           String   @unique
+  name            String?
+  photoUrl        String?
+  language        String   @default("en") // en/hi
+  lat             Float?
+  lng             Float?
+  pinCode         String?
+  areaLabel       String?
+  radiusKm        Int      @default(10) // min 5, max 100
+  isWorker        Boolean  @default(false)
+  skills          String[]
+  experienceYears Int?
+  expectedPay     Int?
+  payType         PayType?
+  about           String?
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0)
+  availableNow    Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workPosts       WorkPost[]
+  applications    JobApplication[]
+  messages        Message[]
+  reviewsGiven    Review[] @relation("Reviewer")
+  reviewsReceived Review[] @relation("Reviewee")
+  conversations   ConversationMember[]
+
+  connectionsSent     Connection[] @relation("Requester")
+  connectionsReceived Connection[] @relation("Addressee")
+  
+  @@index([lat, lng])
+}
+
+enum PayType {
+  HOURLY
+  DAILY
+  FIXED
+  PER_UNIT
+}
+
+model WorkPost {
+  id           String    @id @default(uuid())
+  posterId     String
+  poster       User      @relation(fields: [posterId], references: [id], onDelete: Cascade)
+  category     String
+  title        String    @db.VarChar(120)
+  description  String?   @db.VarChar(500)
+  payAmount    Int       // in paise
+  payType      PayType
+  lat          Float
+  lng          Float
+  areaLabel    String?
+  isUrgent     Boolean   @default(false)
+  status       PostStatus @default(POSTED)
+  expiresAt    DateTime?
+  peopleNeeded Int       @default(1)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  applications JobApplication[]
+  conversations Conversation[]
+  reviews      Review[]
+
+  @@index([lat, lng])
+}
+
+enum PostStatus {
+  POSTED
+  IN_DISCUSSION
+  CONFIRMED
+  STARTED
+  COMPLETED
+  CLOSED
+  EXPIRED
+}
+
+model JobApplication {
+  id              String     @id @default(uuid())
+  jobId           String
+  workPost        WorkPost   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  workerId        String
+  worker          User       @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  status          AppStatus  @default(PENDING)
+  counterAmount   Int?
+  counterPayType  PayType?
+  createdAt       DateTime   @default(now())
+
+  @@unique([jobId, workerId])
+}
+
+enum AppStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model Conversation {
+  id         String   @id @default(uuid())
+  workPostId String?
+  workPost   WorkPost? @relation(fields: [workPostId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  members    ConversationMember[]
+  messages   Message[]
+}
+
+model ConversationMember {
+  conversationId   String
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt         DateTime     @default(now())
+  phoneShareAgreed Boolean      @default(false)
+
+  @@id([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String       @db.VarChar(4000)
+  attachmentUrl  String?
+  isVoiceNote    Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  workPostId String
+  workPost   WorkPost @relation(fields: [workPostId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  revieweeId String
+  reviewee   User     @relation("Reviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  stars      Int      // 1-5
+  comment    String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  @@unique([workPostId, reviewerId])
+}
+
+model Connection {
+  requesterId String
+  requester   User             @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User             @relation("Addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      ConnectionStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@id([requesterId, addresseeId])
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
