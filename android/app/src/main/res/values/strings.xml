@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kam</string>
+    <string name="title_activity_main">Kam</string>
+    <string name="package_name">com.kam.localwork</string>
+    <string name="custom_url_scheme">com.kam.localwork</string>
+</resources>

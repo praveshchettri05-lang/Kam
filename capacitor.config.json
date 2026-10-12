@@ -1,0 +1,13 @@
+{
+  "appId": "com.kam.localwork",
+  "appName": "Kam",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://spotty-bats-tap.loca.lt",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
