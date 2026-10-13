@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { otpStore } from '@/lib/otp';
 
-// In-memory store for MVP
-const otpStore = new Map<string, string>();
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,5 +22,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
-export { otpStore };
